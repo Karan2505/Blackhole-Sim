@@ -1,0 +1,275 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(blackhole-sim
+    VERSION 1.0.0
+    DESCRIPTION "Production-grade black hole simulation with GR, GRMHD, and radiative transfer"
+    LANGUAGES CXX CUDA
+)
+
+# ============================================================================
+# Build Options
+# ============================================================================
+option(ENABLE_CUDA "Enable CUDA GPU acceleration" ON)
+option(ENABLE_MPI "Enable MPI distributed computing" ON)
+option(ENABLE_OPENMP "Enable OpenMP multithreading" ON)
+option(ENABLE_PYTHON "Build Python bindings" ON)
+option(ENABLE_TESTS "Build unit tests" ON)
+option(ENABLE_DOCS "Build documentation" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
+# ============================================================================
+# C++ Standard
+# ============================================================================
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ============================================================================
+# Compiler Flags
+# ============================================================================
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    if(CMAKE_BUILD_TYPE MATCHES "Release")
+        add_compile_options(-O3 -march=native -ffast-math)
+    endif()
+    if(CMAKE_BUILD_TYPE MATCHES "Debug")
+        add_compile_options(-g -O0 -fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
+endif()
+
+# ============================================================================
+# Find Dependencies
+# ============================================================================
+
+# OpenMP
+if(ENABLE_OPENMP)
+    find_package(OpenMP REQUIRED)
+endif()
+
+# MPI
+if(ENABLE_MPI)
+    find_package(MPI REQUIRED)
+endif()
+
+# CUDA
+if(ENABLE_CUDA)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    set(CMAKE_CUDA_ARCHITECTURES "70;75;80;86")
+endif()
+
+# HDF5
+find_package(HDF5 COMPONENTS CXX)
+
+# Python (for bindings)
+if(ENABLE_PYTHON)
+    find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+    find_package(pybind11 CONFIG)
+    if(NOT pybind11_FOUND)
+        # Fetch pybind11 if not found
+        include(FetchContent)
+        FetchContent_Declare(
+            pybind11
+            GIT_REPOSITORY https://github.com/pybind/pybind11.git
+            GIT_TAG v2.11.1
+        )
+        FetchContent_MakeAvailable(pybind11)
+    endif()
+endif()
+
+# ============================================================================
+# Core Library
+# ============================================================================
+add_library(bhsim_core
+    core/src/metric.cpp
+    core/src/geodesic.cpp
+    core/src/grmhd.cpp
+    core/src/radiative_transfer.cpp
+)
+
+target_include_directories(bhsim_core PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+if(ENABLE_OPENMP)
+    target_link_libraries(bhsim_core PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+if(ENABLE_MPI)
+    target_link_libraries(bhsim_core PUBLIC MPI::MPI_CXX)
+    target_compile_definitions(bhsim_core PUBLIC BHSIM_USE_MPI)
+endif()
+
+if(HDF5_FOUND)
+    target_link_libraries(bhsim_core PUBLIC ${HDF5_CXX_LIBRARIES})
+    target_include_directories(bhsim_core PRIVATE ${HDF5_INCLUDE_DIRS})
+    target_compile_definitions(bhsim_core PUBLIC BHSIM_USE_HDF5)
+endif()
+
+# ============================================================================
+# CUDA Kernels
+# ============================================================================
+if(ENABLE_CUDA)
+    add_library(bhsim_cuda
+        cuda/kernels/geodesic_kernel.cu
+        cuda/kernels/grmhd_kernel.cu
+        cuda/kernels/raytracer_kernel.cu
+    )
+    
+    target_include_directories(bhsim_cuda PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cuda/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/include>
+    )
+    
+    target_link_libraries(bhsim_cuda PUBLIC
+        CUDA::cudart
+        CUDA::cublas
+        CUDA::cufft
+    )
+    
+    set_target_properties(bhsim_cuda PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON
+    )
+    
+    target_compile_definitions(bhsim_core PUBLIC BHSIM_USE_CUDA)
+    target_link_libraries(bhsim_core PUBLIC bhsim_cuda)
+endif()
+
+# ============================================================================
+# Python Bindings
+# ============================================================================
+if(ENABLE_PYTHON)
+    pybind11_add_module(_bhsim_core
+        python/bindings/module.cpp
+        python/bindings/metric_bindings.cpp
+        python/bindings/geodesic_bindings.cpp
+    )
+    
+    target_link_libraries(_bhsim_core PRIVATE bhsim_core)
+    
+    # Install Python module
+    install(TARGETS _bhsim_core
+        LIBRARY DESTINATION ${Python3_SITELIB}/bhsim
+    )
+endif()
+
+# ============================================================================
+# Examples
+# ============================================================================
+add_executable(render_kerr examples/render_kerr.cpp)
+target_link_libraries(render_kerr PRIVATE bhsim_core)
+
+add_executable(grmhd_simulation examples/grmhd_simulation.cpp)
+target_link_libraries(grmhd_simulation PRIVATE bhsim_core)
+
+# ============================================================================
+# Tests
+# ============================================================================
+if(ENABLE_TESTS)
+    enable_testing()
+    
+    # Fetch GoogleTest
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+    )
+    FetchContent_MakeAvailable(googletest)
+    
+    add_executable(test_metric core/tests/test_metric.cpp)
+    target_link_libraries(test_metric PRIVATE bhsim_core GTest::gtest_main)
+    
+    add_executable(test_geodesic core/tests/test_geodesic.cpp)
+    target_link_libraries(test_geodesic PRIVATE bhsim_core GTest::gtest_main)
+    
+    add_executable(test_grmhd core/tests/test_grmhd.cpp)
+    target_link_libraries(test_grmhd PRIVATE bhsim_core GTest::gtest_main)
+    
+    include(GoogleTest)
+    gtest_discover_tests(test_metric)
+    gtest_discover_tests(test_geodesic)
+    gtest_discover_tests(test_grmhd)
+endif()
+
+# ============================================================================
+# Documentation
+# ============================================================================
+if(ENABLE_DOCS)
+    find_package(Doxygen REQUIRED)
+    
+    set(DOXYGEN_GENERATE_HTML YES)
+    set(DOXYGEN_GENERATE_XML YES)
+    set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs)
+    
+    doxygen_add_docs(docs
+        ${CMAKE_CURRENT_SOURCE_DIR}/core/include
+        COMMENT "Generating API documentation"
+    )
+endif()
+
+# ============================================================================
+# Installation
+# ============================================================================
+include(GNUInstallDirs)
+
+install(TARGETS bhsim_core
+    EXPORT bhsim-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(DIRECTORY core/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(EXPORT bhsim-targets
+    FILE bhsim-targets.cmake
+    NAMESPACE bhsim::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bhsim
+)
+
+# Package configuration
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    bhsim-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/bhsim-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/bhsim-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bhsim
+)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/bhsim-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/bhsim-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bhsim
+)
+
+# ============================================================================
+# Summary
+# ============================================================================
+message(STATUS "")
+message(STATUS "BlackHole-Sim Configuration Summary")
+message(STATUS "====================================")
+message(STATUS "Version:       ${PROJECT_VERSION}")
+message(STATUS "Build type:    ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ Compiler:  ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "")
+message(STATUS "Features:")
+message(STATUS "  CUDA:        ${ENABLE_CUDA}")
+message(STATUS "  MPI:         ${ENABLE_MPI}")
+message(STATUS "  OpenMP:      ${ENABLE_OPENMP}")
+message(STATUS "  Python:      ${ENABLE_PYTHON}")
+message(STATUS "  Tests:       ${ENABLE_TESTS}")
+message(STATUS "  Docs:        ${ENABLE_DOCS}")
+message(STATUS "")

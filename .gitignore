@@ -1,0 +1,75 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node (if used for development)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local
+.venv/
+venv/
+ENV/
+
+# Build outputs
+*.o
+*.so
+*.a
+*.dll
+*.dylib
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Generated files
+*.min.js
+*.min.css
+
+# Large data files
+*.hdf5
+*.h5
+*.fits
+*.mp4
+*.mov
+*.avi
+
+# Keep these
+!.github/
+!.gitignore

@@ -1,0 +1,2781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gargantua | Interstellar Black Hole Simulation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        #main-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ui-overlay {
+            position: fixed;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .ui-overlay > * {
+            pointer-events: auto;
+        }
+        
+        .top-bar {
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #f90;
+            border-radius: 50%;
+            position: relative;
+            animation: pulse-ring 2s infinite;
+        }
+        
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            background: #000;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px #f90;
+        }
+        
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,153,0,0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(255,153,0,0); }
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+        
+        .logo h1 span {
+            color: #f90;
+            font-weight: 600;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,153,0,0.3);
+            border-color: #f90;
+        }
+        
+        .nav-btn.active {
+            background: linear-gradient(135deg, #f90, #f60);
+            border-color: transparent;
+        }
+        
+        .control-panel {
+            top: 100px;
+            right: 20px;
+            width: 340px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+        
+        .panel {
+            background: rgba(10,10,15,0.95);
+            border: 1px solid rgba(255,153,0,0.3);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            padding: 15px 20px;
+            background: rgba(255,153,0,0.1);
+            border-bottom: 1px solid rgba(255,153,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .panel-header h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #f90;
+        }
+        
+        .panel-content {
+            padding: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .control-value {
+            color: #f90;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #f90, #f60);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255,153,0,0.5);
+        }
+        
+        .toggle-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .toggle-btn {
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            color: #666;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+        
+        .toggle-btn.active {
+            background: rgba(255,153,0,0.2);
+            border-color: #f90;
+            color: #f90;
+        }
+        
+        .toggle-btn:hover {
+            border-color: rgba(255,153,0,0.5);
+            color: #aaa;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .metric-item {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .metric-label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+        
+        .bottom-bar {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .physics-readout {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .readout-item {
+            text-align: center;
+        }
+        
+        .readout-value {
+            font-size: 24px;
+            font-weight: 200;
+            color: #f90;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .readout-label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255,153,0,0.2);
+            border-color: #f90;
+            transform: scale(1.1);
+        }
+        
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #888;
+            transition: fill 0.3s;
+        }
+        
+        .action-btn:hover svg {
+            fill: #f90;
+        }
+        
+        .info-panel {
+            bottom: 100px;
+            left: 20px;
+            width: 380px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .equation-box {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Times New Roman', serif;
+            font-size: 14px;
+            line-height: 1.8;
+            border-left: 3px solid #f90;
+        }
+        
+        .equation-box .eq {
+            color: #f90;
+            font-style: italic;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 1s, visibility 1s;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loading-ring {
+            width: 100px;
+            height: 100px;
+            border: 2px solid transparent;
+            border-top-color: #f90;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: relative;
+        }
+        
+        .loading-ring::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid transparent;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite reverse;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 30px;
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #555;
+        }
+        
+        .cinematic-bars {
+            position: fixed;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #000;
+            z-index: 50;
+            pointer-events: none;
+        }
+        
+        .cinematic-bars.top { top: 0; }
+        .cinematic-bars.bottom { bottom: 0; }
+        
+        select {
+            width: 100%;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        select:focus {
+            border-color: #f90;
+        }
+        
+        select option {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,153,0,0.3);
+            border-radius: 3px;
+        }
+        
+        /* Simulation mode specific styles */
+        .simulation-info {
+            background: rgba(0,0,0,0.9);
+            border: 1px solid rgba(255,153,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .simulation-info h4 {
+            color: #f90;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .simulation-info p {
+            color: #aaa;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 11px;
+        }
+        
+        .data-row span:first-child {
+            color: #888;
+        }
+        
+        .data-row span:last-child {
+            color: #f90;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .spawn-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f90, #f60);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+        
+        .spawn-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255,153,0,0.5);
+        }
+        
+        .particle-count {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,153,0,0.1);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .trajectory-canvas {
+            width: 100%;
+            height: 200px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255,153,0,0.2);
+            margin-top: 10px;
+        }
+        
+        .warning-text {
+            color: #ff4444;
+            font-size: 11px;
+            padding: 8px;
+            background: rgba(255,0,0,0.1);
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+        
+        .quantum-display {
+            background: linear-gradient(135deg, rgba(100,0,150,0.2), rgba(0,100,150,0.2));
+            border: 1px solid rgba(150,100,255,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .quantum-display h4 {
+            color: #a855f7;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .penrose-diagram {
+            width: 100%;
+            height: 180px;
+            background: #000;
+            border: 1px solid rgba(255,153,0,0.3);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-ring"></div>
+        <div class="loading-text">Initializing Spacetime Manifold</div>
+    </div>
+    
+    <!-- Cinematic Letterbox -->
+    <div class="cinematic-bars top" id="topBar"></div>
+    <div class="cinematic-bars bottom" id="bottomBar"></div>
+    
+    <!-- WebGL Canvas -->
+    <div id="canvas-container">
+        <canvas id="main-canvas"></canvas>
+    </div>
+    
+    <!-- Top Navigation -->
+    <div class="ui-overlay top-bar">
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <h1><span>Gargantua</span> Simulator</h1>
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn active" id="btn-observe" onclick="setMode('observe')">Observe</button>
+            <button class="nav-btn" id="btn-orbit" onclick="setMode('orbit')">Orbit</button>
+            <button class="nav-btn" id="btn-freefall" onclick="setMode('freefall')">Freefall</button>
+            <button class="nav-btn" id="btn-interior" onclick="setMode('interior')">Interior</button>
+            <button class="nav-btn" id="btn-quantum" onclick="setMode('quantum')">Quantum</button>
+        </div>
+    </div>
+    
+    <!-- Control Panel -->
+    <div class="ui-overlay control-panel" id="controlPanel">
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Black Hole Parameters</h3>
+                <span>▼</span>
+            </div>
+            <div class="panel-content">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Mass (M☉)</span>
+                        <span class="control-value" id="massDisplay">100M</span>
+                    </div>
+                    <input type="range" id="massSlider" min="1" max="1000" value="100" step="1">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Spin Parameter (a/M)</span>
+                        <span class="control-value" id="spinDisplay">0.999</span>
+                    </div>
+                    <input type="range" id="spinSlider" min="0" max="0.999" value="0.999" step="0.001">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Inclination</span>
+                        <span class="control-value" id="incDisplay">85°</span>
+                    </div>
+                    <input type="range" id="incSlider" min="0" max="90" value="85" step="1">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Observer Distance (rg)</span>
+                        <span class="control-value" id="distDisplay">50</span>
+                    </div>
+                    <input type="range" id="distSlider" min="10" max="200" value="50" step="1">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mode-specific panels will be inserted here -->
+        <div id="mode-panel"></div>
+        
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Visualization</h3>
+                <span>▼</span>
+            </div>
+            <div class="panel-content">
+                <div class="control-group">
+                    <div class="control-label"><span>Coordinate System</span></div>
+                    <select id="coordSystem">
+                        <option value="boyer-lindquist">Boyer-Lindquist</option>
+                        <option value="kerr-schild">Kerr-Schild (Horizon Penetrating)</option>
+                        <option value="kruskal">Kruskal-Szekeres</option>
+                        <option value="eddington">Eddington-Finkelstein</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label"><span>Features</span></div>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-feature="disk">Accretion Disk</button>
+                        <button class="toggle-btn active" data-feature="lensing">Gravitational Lensing</button>
+                        <button class="toggle-btn active" data-feature="doppler">Doppler Effect</button>
+                        <button class="toggle-btn" data-feature="jets">Relativistic Jets</button>
+                        <button class="toggle-btn active" data-feature="stars">Background Stars</button>
+                        <button class="toggle-btn" data-feature="grid">Coordinate Grid</button>
+                        <button class="toggle-btn" data-feature="photon">Photon Sphere</button>
+                        <button class="toggle-btn" data-feature="ergo">Ergosphere</button>
+                        <button class="toggle-btn" data-feature="trajectories">Show Trajectories</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Time Dilation Factor</span>
+                        <span class="control-value" id="timeDisplay">1.00x</span>
+                    </div>
+                    <input type="range" id="timeSlider" min="0.01" max="10" value="1" step="0.01">
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Computed Metrics</h3>
+                <span>▼</span>
+            </div>
+            <div class="panel-content">
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-value" id="metricRs">2.000</div>
+                        <div class="metric-label">rs / M</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="metricRh">1.045</div>
+                        <div class="metric-label">r+ / M</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="metricRisco">1.237</div>
+                        <div class="metric-label">rISCO / M</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="metricRph">1.074</div>
+                        <div class="metric-label">rph / M</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="metricOmega">0.476</div>
+                        <div class="metric-label">ΩH c/M</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="metricShadow">5.20</div>
+                        <div class="metric-label">Shadow / M</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div class="ui-overlay info-panel" id="infoPanel">
+        <div class="panel">
+            <div class="panel-header">
+                <h3 id="infoTitle">Kerr Metric</h3>
+            </div>
+            <div class="panel-content" id="infoContent">
+                <div class="equation-box">
+                    <span class="eq">ds² = -(1-2Mr/Σ)dt²</span> - <span class="eq">(4Mar sin²θ/Σ)dtdφ</span><br>
+                    + <span class="eq">(Σ/Δ)dr²</span> + <span class="eq">Σdθ²</span> + <span class="eq">Asin²θ/Σ dφ²</span><br><br>
+                    where: Σ = r² + a²cos²θ, Δ = r² - 2Mr + a²<br>
+                    A = (r² + a²)² - a²Δsin²θ
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Bar -->
+    <div class="ui-overlay bottom-bar">
+        <div class="physics-readout">
+            <div class="readout-item">
+                <div class="readout-value" id="readoutFps">60</div>
+                <div class="readout-label">FPS</div>
+            </div>
+            <div class="readout-item">
+                <div class="readout-value" id="readoutMode">OBSERVE</div>
+                <div class="readout-label">Mode</div>
+            </div>
+            <div class="readout-item">
+                <div class="readout-value" id="readoutTime">0.000</div>
+                <div class="readout-label">Proper Time (τ)</div>
+            </div>
+            <div class="readout-item">
+                <div class="readout-value" id="readoutParticles">0</div>
+                <div class="readout-label">Particles</div>
+            </div>
+            <div class="readout-item">
+                <div class="readout-value" id="readoutCoord">50.0, 85°</div>
+                <div class="readout-label">r, θ (observer)</div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="action-btn" onclick="togglePlay()" title="Play/Pause">
+                <svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="action-btn" onclick="resetSimulation()" title="Reset">
+                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            </button>
+            <button class="action-btn" onclick="captureFrame()" title="Capture">
+                <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            </button>
+            <button class="action-btn" onclick="toggleFullscreen()" title="Fullscreen">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Three.js and Physics Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // =====================================================
+        // GARGANTUA - COMPLETE BLACK HOLE PHYSICS ENGINE
+        // Implementing GR, GRMHD, Geodesics, Quantum Analogues
+        // =====================================================
+        
+        // ==================== PHYSICAL CONSTANTS ====================
+        const C = 299792458;           // Speed of light (m/s)
+        const G = 6.67430e-11;         // Gravitational constant
+        const MSUN = 1.989e30;         // Solar mass (kg)
+        const HBAR = 1.054571817e-34;  // Reduced Planck constant
+        const KB = 1.380649e-23;       // Boltzmann constant
+        const PI = Math.PI;
+        
+        // ==================== SIMULATION STATE ====================
+        let scene, camera, renderer;
+        let blackHoleMesh, diskMesh, starField;
+        let isPlaying = true;
+        let properTime = 0;
+        let coordinateTime = 0;
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+        let currentMode = 'observe';
+        
+        // Particles for orbit/freefall simulations
+        let particles = [];
+        let particleMeshes = [];
+        let trajectoryLines = [];
+        let maxParticles = 100;
+        
+        // ==================== BLACK HOLE PARAMETERS ====================
+        const params = {
+            mass: 100,              // Solar masses
+            spin: 0.999,            // a/M (near-extremal Kerr)
+            inclination: 85,        // degrees
+            distance: 50,           // gravitational radii
+            timeScale: 1,
+            coordSystem: 'boyer-lindquist',
+            features: {
+                disk: true,
+                lensing: true,
+                doppler: true,
+                jets: false,
+                stars: true,
+                grid: false,
+                photon: false,
+                ergo: false,
+                trajectories: true
+            }
+        };
+        
+        // ==================== KERR METRIC IMPLEMENTATION ====================
+        class KerrMetric {
+            constructor(M, a) {
+                this.M = M;  // Mass in geometric units
+                this.a = a;  // Spin parameter
+            }
+            
+            // Σ = r² + a²cos²θ
+            Sigma(r, theta) {
+                const cosTheta = Math.cos(theta);
+                return r * r + this.a * this.a * cosTheta * cosTheta;
+            }
+            
+            // Δ = r² - 2Mr + a²
+            Delta(r) {
+                return r * r - 2 * this.M * r + this.a * this.a;
+            }
+            
+            // A = (r² + a²)² - a²Δsin²θ
+            A(r, theta) {
+                const r2a2 = r * r + this.a * this.a;
+                const sinTheta = Math.sin(theta);
+                return r2a2 * r2a2 - this.a * this.a * this.Delta(r) * sinTheta * sinTheta;
+            }
+            
+            // Event horizon r+ = M + √(M² - a²)
+            get horizonRadius() {
+                return this.M + Math.sqrt(this.M * this.M - this.a * this.a);
+            }
+            
+            // Inner horizon r- = M - √(M² - a²)
+            get innerHorizonRadius() {
+                return this.M - Math.sqrt(this.M * this.M - this.a * this.a);
+            }
+            
+            // ISCO radius (prograde)
+            get iscoRadius() {
+                const a = this.a / this.M;
+                const Z1 = 1 + Math.pow(1 - a * a, 1/3) * (Math.pow(1 + a, 1/3) + Math.pow(1 - a, 1/3));
+                const Z2 = Math.sqrt(3 * a * a + Z1 * Z1);
+                return this.M * (3 + Z2 - Math.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2)));
+            }
+            
+            // Photon sphere radius (prograde, equatorial)
+            get photonSphereRadius() {
+                const a = this.a / this.M;
+                return 2 * this.M * (1 + Math.cos(2/3 * Math.acos(-a)));
+            }
+            
+            // Ergosphere radius at given theta
+            ergosphereRadius(theta) {
+                const cosTheta = Math.cos(theta);
+                return this.M + Math.sqrt(this.M * this.M - this.a * this.a * cosTheta * cosTheta);
+            }
+            
+            // Angular velocity at horizon
+            get horizonAngularVelocity() {
+                return this.a / (2 * this.M * this.horizonRadius);
+            }
+            
+            // Metric tensor components g_μν at (r, θ)
+            metricTensor(r, theta) {
+                const sigma = this.Sigma(r, theta);
+                const delta = this.Delta(r);
+                const A = this.A(r, theta);
+                const sinTheta = Math.sin(theta);
+                const sin2Theta = sinTheta * sinTheta;
+                
+                return {
+                    g_tt: -(1 - 2 * this.M * r / sigma),
+                    g_rr: sigma / delta,
+                    g_thth: sigma,
+                    g_phph: A * sin2Theta / sigma,
+                    g_tph: -2 * this.M * this.a * r * sin2Theta / sigma
+                };
+            }
+            
+            // Inverse metric g^μν
+            inverseMetric(r, theta) {
+                const sigma = this.Sigma(r, theta);
+                const delta = this.Delta(r);
+                const A = this.A(r, theta);
+                const sinTheta = Math.sin(theta);
+                const sin2Theta = sinTheta * sinTheta;
+                
+                return {
+                    g_tt_inv: -A / (sigma * delta),
+                    g_rr_inv: delta / sigma,
+                    g_thth_inv: 1 / sigma,
+                    g_phph_inv: (delta - this.a * this.a * sin2Theta) / (sigma * delta * sin2Theta),
+                    g_tph_inv: -2 * this.M * this.a * r / (sigma * delta)
+                };
+            }
+            
+            // Christoffel symbols Γ^α_μν (selected components)
+            christoffel(r, theta) {
+                const sigma = this.Sigma(r, theta);
+                const delta = this.Delta(r);
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+                const sin2Theta = sinTheta * sinTheta;
+                const cos2Theta = cosTheta * cosTheta;
+                const r2 = r * r;
+                const a2 = this.a * this.a;
+                const sigma2 = sigma * sigma;
+                const M = this.M;
+                
+                return {
+                    // Γ^r_tt
+                    G_r_tt: M * delta * (r2 - a2 * cos2Theta) / (sigma2 * sigma),
+                    // Γ^r_rr
+                    G_r_rr: (r * delta - M * (r2 - a2)) / (sigma * delta),
+                    // Γ^r_θθ
+                    G_r_thth: -r * delta / sigma,
+                    // Γ^θ_rθ
+                    G_th_rth: r / sigma,
+                    // Γ^θ_φφ
+                    G_th_phph: -sinTheta * cosTheta * ((r2 + a2) * (r2 + a2) / sigma + a2 * sin2Theta) / sigma,
+                    // Γ^φ_rφ
+                    G_ph_rph: (r * sigma - M * (r2 - a2 * cos2Theta)) / (sigma2 * delta),
+                    // Γ^φ_θφ
+                    G_ph_thph: cosTheta / sinTheta + 2 * a2 * sinTheta * cosTheta / sigma
+                };
+            }
+            
+            // Gravitational redshift factor
+            redshiftFactor(r, theta) {
+                const g = this.metricTensor(r, theta);
+                return Math.sqrt(-g.g_tt);
+            }
+            
+            // Tidal tensor component (radial stretching)
+            tidalForce(r, theta) {
+                // Simplified Weyl tensor component for radial tidal force
+                // C_trtr ∝ M/r³ for Schwarzschild, more complex for Kerr
+                const sigma = this.Sigma(r, theta);
+                return 2 * this.M * (r * r - 3 * this.a * this.a * Math.cos(theta) * Math.cos(theta)) / (sigma * sigma * Math.sqrt(sigma));
+            }
+        }
+        
+        // ==================== GEODESIC INTEGRATOR ====================
+        class GeodesicIntegrator {
+            constructor(metric) {
+                this.metric = metric;
+            }
+            
+            // Compute geodesic acceleration d²x^μ/dτ² = -Γ^μ_νρ (dx^ν/dτ)(dx^ρ/dτ)
+            geodesicAcceleration(state) {
+                const { r, theta, phi, v_r, v_theta, v_phi, v_t } = state;
+                const Gamma = this.metric.christoffel(r, theta);
+                
+                // d²r/dτ²
+                const a_r = -Gamma.G_r_tt * v_t * v_t 
+                          - Gamma.G_r_rr * v_r * v_r 
+                          - Gamma.G_r_thth * v_theta * v_theta;
+                
+                // d²θ/dτ²
+                const a_theta = -2 * Gamma.G_th_rth * v_r * v_theta 
+                              - Gamma.G_th_phph * v_phi * v_phi;
+                
+                // d²φ/dτ²
+                const a_phi = -2 * Gamma.G_ph_rph * v_r * v_phi 
+                            - 2 * Gamma.G_ph_thph * v_theta * v_phi;
+                
+                return { a_r, a_theta, a_phi };
+            }
+            
+            // RK4 integration step
+            rk4Step(state, dt) {
+                const k1 = this.computeDerivatives(state);
+                const k2 = this.computeDerivatives(this.addStates(state, k1, dt/2));
+                const k3 = this.computeDerivatives(this.addStates(state, k2, dt/2));
+                const k4 = this.computeDerivatives(this.addStates(state, k3, dt));
+                
+                return {
+                    t: state.t + dt,
+                    r: state.r + dt/6 * (k1.dr + 2*k2.dr + 2*k3.dr + k4.dr),
+                    theta: state.theta + dt/6 * (k1.dtheta + 2*k2.dtheta + 2*k3.dtheta + k4.dtheta),
+                    phi: state.phi + dt/6 * (k1.dphi + 2*k2.dphi + 2*k3.dphi + k4.dphi),
+                    v_r: state.v_r + dt/6 * (k1.dv_r + 2*k2.dv_r + 2*k3.dv_r + k4.dv_r),
+                    v_theta: state.v_theta + dt/6 * (k1.dv_theta + 2*k2.dv_theta + 2*k3.dv_theta + k4.dv_theta),
+                    v_phi: state.v_phi + dt/6 * (k1.dv_phi + 2*k2.dv_phi + 2*k3.dv_phi + k4.dv_phi),
+                    v_t: state.v_t,
+                    properTime: state.properTime + dt
+                };
+            }
+            
+            computeDerivatives(state) {
+                const acc = this.geodesicAcceleration(state);
+                return {
+                    dr: state.v_r,
+                    dtheta: state.v_theta,
+                    dphi: state.v_phi,
+                    dv_r: acc.a_r,
+                    dv_theta: acc.a_theta,
+                    dv_phi: acc.a_phi
+                };
+            }
+            
+            addStates(state, derivatives, dt) {
+                return {
+                    ...state,
+                    r: state.r + derivatives.dr * dt,
+                    theta: state.theta + derivatives.dtheta * dt,
+                    phi: state.phi + derivatives.dphi * dt,
+                    v_r: state.v_r + derivatives.dv_r * dt,
+                    v_theta: state.v_theta + derivatives.dv_theta * dt,
+                    v_phi: state.v_phi + derivatives.dv_phi * dt
+                };
+            }
+        }
+        
+        // ==================== PARTICLE SIMULATION ====================
+        class Particle {
+            constructor(type, initialState, metric) {
+                this.type = type; // 'massive' or 'photon'
+                this.state = initialState;
+                this.metric = metric;
+                this.integrator = new GeodesicIntegrator(metric);
+                this.trajectory = [{ ...initialState }];
+                this.alive = true;
+                this.crossedHorizon = false;
+                this.reachedSingularity = false;
+                this.color = type === 'photon' ? 0xffff00 : 0x00ffff;
+            }
+            
+            update(dt) {
+                if (!this.alive) return;
+                
+                // Adaptive step size based on proximity to horizon
+                const rH = this.metric.horizonRadius;
+                const adaptiveDt = dt * Math.min(1, (this.state.r - rH) / rH);
+                
+                // Integrate geodesic
+                this.state = this.integrator.rk4Step(this.state, Math.max(adaptiveDt, dt * 0.01));
+                
+                // Store trajectory point
+                if (this.trajectory.length < 5000) {
+                    this.trajectory.push({ ...this.state });
+                }
+                
+                // Check for horizon crossing
+                if (this.state.r < rH * 1.01 && !this.crossedHorizon) {
+                    this.crossedHorizon = true;
+                    console.log(`Particle crossed horizon at τ = ${this.state.properTime.toFixed(4)}`);
+                }
+                
+                // Check for singularity approach
+                if (this.state.r < 0.1 * this.metric.M) {
+                    this.reachedSingularity = true;
+                    this.alive = false;
+                    console.log(`Particle reached singularity at τ = ${this.state.properTime.toFixed(4)}`);
+                }
+                
+                // Keep theta in bounds
+                if (this.state.theta < 0.01) this.state.theta = 0.01;
+                if (this.state.theta > PI - 0.01) this.state.theta = PI - 0.01;
+            }
+            
+            // Get 3D position for rendering
+            get position() {
+                const r = this.state.r;
+                const theta = this.state.theta;
+                const phi = this.state.phi;
+                
+                return {
+                    x: r * Math.sin(theta) * Math.cos(phi),
+                    y: r * Math.cos(theta),
+                    z: r * Math.sin(theta) * Math.sin(phi)
+                };
+            }
+            
+            // Compute local tidal stretching
+            get tidalStretch() {
+                return this.metric.tidalForce(this.state.r, this.state.theta);
+            }
+            
+            // Compute local time dilation
+            get timeDilation() {
+                return this.metric.redshiftFactor(this.state.r, this.state.theta);
+            }
+        }
+        
+        // ==================== ORBIT GENERATOR ====================
+        function createOrbitingParticle(r, metric) {
+            // Compute circular orbit velocity at radius r
+            const M = metric.M;
+            const a = metric.a;
+            
+            // Keplerian angular velocity for Kerr
+            const Omega = 1 / (Math.pow(r, 1.5) / Math.sqrt(M) + a / Math.sqrt(M));
+            
+            // Initial 4-velocity for circular orbit
+            const v_phi = Omega * r * Math.sin(PI/2); // Equatorial orbit
+            
+            const state = {
+                t: 0,
+                r: r,
+                theta: PI / 2,
+                phi: Math.random() * 2 * PI,
+                v_r: 0,
+                v_theta: 0,
+                v_phi: v_phi,
+                v_t: 1,
+                properTime: 0
+            };
+            
+            return new Particle('massive', state, metric);
+        }
+        
+        // ==================== FREEFALL GENERATOR ====================
+        function createFreefallParticle(r0, theta0, metric) {
+            // Particle released from rest at (r0, theta0)
+            // Initial radial velocity from energy conservation
+            
+            const state = {
+                t: 0,
+                r: r0,
+                theta: theta0,
+                phi: Math.random() * 2 * PI,
+                v_r: -0.01, // Small inward velocity
+                v_theta: 0,
+                v_phi: 0,
+                v_t: 1,
+                properTime: 0
+            };
+            
+            return new Particle('massive', state, metric);
+        }
+        
+        // ==================== QUANTUM ANALOGUE MODULE ====================
+        class QuantumAnalogue {
+            constructor(metric) {
+                this.metric = metric;
+                this.latticeSize = 64;
+                this.field = new Float32Array(this.latticeSize * this.latticeSize);
+                this.momentum = new Float32Array(this.latticeSize * this.latticeSize);
+                this.hawkingSpectrum = [];
+                this.entanglementEntropy = 0;
+                this.reset();
+            }
+            
+            reset() {
+                // Initialize quantum field with vacuum fluctuations
+                for (let i = 0; i < this.field.length; i++) {
+                    this.field[i] = (Math.random() - 0.5) * 0.01;
+                    this.momentum[i] = (Math.random() - 0.5) * 0.01;
+                }
+                this.hawkingSpectrum = [];
+                for (let i = 0; i < 100; i++) {
+                    this.hawkingSpectrum.push(0);
+                }
+            }
+            
+            // Compute Hawking temperature T_H = ℏc³/(8πGMk_B)
+            get hawkingTemperature() {
+                const M = this.metric.M * MSUN;
+                return (HBAR * Math.pow(C, 3)) / (8 * PI * G * M * KB);
+            }
+            
+            // Evolve quantum field using 1+1D curved space Hamiltonian
+            evolve(dt) {
+                // Simplified Klein-Gordon on curved background
+                const dr = 2 * this.metric.horizonRadius / this.latticeSize;
+                
+                for (let i = 1; i < this.latticeSize - 1; i++) {
+                    for (let j = 1; j < this.latticeSize - 1; j++) {
+                        const idx = i * this.latticeSize + j;
+                        const r = this.metric.horizonRadius * (0.5 + i / this.latticeSize * 3);
+                        
+                        // Effective potential near horizon
+                        const V = this.effectivePotential(r);
+                        
+                        // Laplacian
+                        const laplacian = (
+                            this.field[idx - 1] + this.field[idx + 1] +
+                            this.field[idx - this.latticeSize] + this.field[idx + this.latticeSize] -
+                            4 * this.field[idx]
+                        ) / (dr * dr);
+                        
+                        // Hamilton's equations
+                        this.momentum[idx] += dt * (laplacian - V * this.field[idx]);
+                        this.field[idx] += dt * this.momentum[idx];
+                    }
+                }
+                
+                // Update Hawking spectrum
+                this.updateSpectrum();
+                
+                // Compute entanglement entropy
+                this.computeEntanglement();
+            }
+            
+            effectivePotential(r) {
+                const rH = this.metric.horizonRadius;
+                const l = 1; // Angular momentum quantum number
+                return (1 - rH / r) * (l * (l + 1) / (r * r) + rH / (r * r * r));
+            }
+            
+            updateSpectrum() {
+                // FFT-based spectrum update (simplified)
+                const horizonIdx = Math.floor(this.latticeSize * 0.3);
+                for (let i = 0; i < 100; i++) {
+                    const freq = (i + 1) * 0.1;
+                    let amplitude = 0;
+                    for (let j = 0; j < this.latticeSize; j++) {
+                        amplitude += this.field[horizonIdx * this.latticeSize + j] * Math.sin(freq * j);
+                    }
+                    this.hawkingSpectrum[i] = 0.95 * this.hawkingSpectrum[i] + 0.05 * Math.abs(amplitude);
+                }
+            }
+            
+            computeEntanglement() {
+                // von Neumann entropy approximation
+                let entropy = 0;
+                const horizonIdx = Math.floor(this.latticeSize * 0.3);
+                
+                for (let j = 0; j < this.latticeSize; j++) {
+                    const p = Math.abs(this.field[horizonIdx * this.latticeSize + j]);
+                    if (p > 1e-10) {
+                        entropy -= p * Math.log(p);
+                    }
+                }
+                
+                this.entanglementEntropy = entropy;
+            }
+        }
+        
+        // ==================== THREE.JS VISUALIZATION ====================
+        let metric;
+        let quantumModule;
+        
+        function init() {
+            const container = document.getElementById('canvas-container');
+            const canvas = document.getElementById('main-canvas');
+            
+            // Initialize metric
+            metric = new KerrMetric(1.0, params.spin);
+            quantumModule = new QuantumAnalogue(metric);
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 50);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            
+            // Create black hole
+            createBlackHole();
+            
+            // Create accretion disk
+            createAccretionDisk();
+            
+            // Create starfield
+            createStarField();
+            
+            // Create photon sphere
+            createPhotonSphere();
+            
+            // Create ergosphere
+            createErgosphere();
+            
+            // Setup controls
+            setupControls();
+            
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 1500);
+            
+            // Update metrics display
+            updateMetricsDisplay();
+            
+            // Start animation
+            animate();
+        }
+        
+        function createBlackHole() {
+            const geometry = new THREE.SphereGeometry(1.5, 128, 128);
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    spin: { value: params.spin }
+                },
+                vertexShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform float spin;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    
+                    void main() {
+                        float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 5.0);
+                        vec3 edgeGlow = vec3(0.1, 0.05, 0.15) * fresnel;
+                        float swirl = sin(atan(vPosition.y, vPosition.x) * 8.0 + time * spin * 3.0) * 0.02;
+                        gl_FragColor = vec4(edgeGlow + swirl, 1.0);
+                    }
+                `
+            });
+            
+            blackHoleMesh = new THREE.Mesh(geometry, material);
+            scene.add(blackHoleMesh);
+        }
+        
+        function createAccretionDisk() {
+            const a = params.spin;
+            const rISCO = metric.iscoRadius;
+            
+            // Main horizontal disk
+            const diskGeometry = new THREE.RingGeometry(rISCO + 0.5, 20, 512, 128);
+            const diskMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    spin: { value: params.spin },
+                    inclination: { value: params.inclination },
+                    innerRadius: { value: rISCO + 0.5 }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vPosition;
+                    void main() {
+                        vUv = uv;
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform float spin;
+                    uniform float inclination;
+                    uniform float innerRadius;
+                    varying vec2 vUv;
+                    varying vec3 vPosition;
+                    
+                    vec3 inferno(float t) {
+                        t = clamp(t, 0.0, 1.0);
+                        vec3 c0 = vec3(0.0002, 0.0016, 0.0139);
+                        vec3 c1 = vec3(0.4165, 0.0883, 0.3712);
+                        vec3 c2 = vec3(0.8510, 0.3294, 0.2588);
+                        vec3 c3 = vec3(0.9882, 0.7098, 0.1961);
+                        vec3 c4 = vec3(0.9882, 0.9980, 0.6449);
+                        
+                        if (t < 0.25) return mix(c0, c1, t * 4.0);
+                        if (t < 0.5) return mix(c1, c2, (t - 0.25) * 4.0);
+                        if (t < 0.75) return mix(c2, c3, (t - 0.5) * 4.0);
+                        return mix(c3, c4, (t - 0.75) * 4.0);
+                    }
+                    
+                    void main() {
+                        float r = length(vPosition.xz);
+                        float phi = atan(vPosition.z, vPosition.x);
+                        
+                        float vOrbit = sqrt(1.0 / r);
+                        float inc = inclination * 3.14159 / 180.0;
+                        float dopplerShift = 1.0 / (1.0 - vOrbit * sin(phi) * sin(inc));
+                        dopplerShift = pow(dopplerShift, 3.0);
+                        
+                        float intensity = pow(innerRadius / r, 2.5) * dopplerShift;
+                        float spiral = sin(phi * 4.0 - time * 2.0 + log(r) * 6.0) * 0.2 + 0.8;
+                        float turbulence = sin(phi * 12.0 + time * 3.0) * 0.1 + sin(phi * 7.0 - time * 1.5) * 0.1;
+                        intensity *= spiral + turbulence;
+                        intensity = clamp(intensity, 0.0, 4.0);
+                        
+                        vec3 color = inferno(intensity * 0.35);
+                        float fadeInner = smoothstep(innerRadius, innerRadius + 0.3, r);
+                        float fadeOuter = 1.0 - smoothstep(15.0, 20.0, r);
+                        float alpha = intensity * fadeInner * fadeOuter;
+                        
+                        gl_FragColor = vec4(color * intensity * 2.0, alpha * 0.95);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            
+            diskMesh = new THREE.Mesh(diskGeometry, diskMaterial);
+            diskMesh.rotation.x = Math.PI / 2;
+            scene.add(diskMesh);
+            
+            // Create the gravitationally lensed upper ring (Interstellar style)
+            createLensedRing(rISCO);
+            
+            // Create inner glow ring
+            createInnerGlow(rISCO);
+        }
+        
+        let upperRing, lowerRing, innerGlowRing;
+        
+        function createLensedRing(rISCO) {
+            // Upper lensed ring - light bent over the black hole
+            const upperRingGeometry = new THREE.TorusGeometry(8, 2.5, 32, 256);
+            const lensedMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    spin: { value: params.spin },
+                    innerRadius: { value: rISCO }
+                },
+                vertexShader: `
+                    varying vec3 vPosition;
+                    varying vec3 vNormal;
+                    varying vec2 vUv;
+                    void main() {
+                        vPosition = position;
+                        vNormal = normal;
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform float spin;
+                    uniform float innerRadius;
+                    varying vec3 vPosition;
+                    varying vec3 vNormal;
+                    varying vec2 vUv;
+                    
+                    vec3 hotColor(float t) {
+                        t = clamp(t, 0.0, 1.0);
+                        vec3 c1 = vec3(0.5, 0.1, 0.0);
+                        vec3 c2 = vec3(1.0, 0.4, 0.1);
+                        vec3 c3 = vec3(1.0, 0.7, 0.3);
+                        vec3 c4 = vec3(1.0, 0.95, 0.8);
+                        
+                        if (t < 0.33) return mix(c1, c2, t * 3.0);
+                        if (t < 0.66) return mix(c2, c3, (t - 0.33) * 3.0);
+                        return mix(c3, c4, (t - 0.66) * 3.0);
+                    }
+                    
+                    void main() {
+                        float phi = atan(vPosition.z, vPosition.x);
+                        float r = length(vPosition.xz);
+                        
+                        // Doppler beaming - one side brighter
+                        float doppler = 0.5 + 0.5 * sin(phi + 1.57);
+                        doppler = pow(doppler, 2.0);
+                        
+                        // Intensity variation
+                        float intensity = 0.6 + 0.4 * doppler;
+                        float flicker = sin(phi * 8.0 - time * 3.0) * 0.15 + sin(phi * 13.0 + time * 2.0) * 0.1;
+                        intensity += flicker;
+                        
+                        // Edge glow
+                        float edge = 1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0)));
+                        edge = pow(edge, 1.5);
+                        
+                        vec3 color = hotColor(intensity * 0.7 + edge * 0.3);
+                        float alpha = (0.7 + edge * 0.3) * intensity;
+                        
+                        gl_FragColor = vec4(color * intensity * 1.8, alpha * 0.85);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            
+            upperRing = new THREE.Mesh(upperRingGeometry, lensedMaterial);
+            upperRing.rotation.x = Math.PI / 2;
+            upperRing.rotation.y = Math.PI / 2;
+            upperRing.position.y = 0;
+            scene.add(upperRing);
+            
+            // Lower lensed ring
+            const lowerRingGeometry = new THREE.TorusGeometry(8, 2.0, 32, 256);
+            lowerRing = new THREE.Mesh(lowerRingGeometry, lensedMaterial.clone());
+            lowerRing.rotation.x = Math.PI / 2;
+            lowerRing.rotation.y = -Math.PI / 2;
+            lowerRing.position.y = 0;
+            scene.add(lowerRing);
+        }
+        
+        function createInnerGlow(rISCO) {
+            // Bright inner edge glow - photon ring
+            const innerRingGeometry = new THREE.TorusGeometry(rISCO + 0.8, 0.4, 32, 128);
+            const innerGlowMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 }
+                },
+                vertexShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    void main() {
+                        vNormal = normal;
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    
+                    void main() {
+                        float phi = atan(vPosition.z, vPosition.x);
+                        float pulse = 0.8 + 0.2 * sin(time * 2.0 + phi * 3.0);
+                        float doppler = 0.6 + 0.4 * sin(phi + 1.57);
+                        
+                        vec3 color = vec3(1.0, 0.85, 0.6) * pulse * doppler;
+                        float alpha = 0.9 * pulse;
+                        
+                        gl_FragColor = vec4(color * 2.0, alpha);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            
+            innerGlowRing = new THREE.Mesh(innerRingGeometry, innerGlowMaterial);
+            innerGlowRing.rotation.x = Math.PI / 2;
+            scene.add(innerGlowRing);
+            
+            // Add secondary photon ring
+            const photonRingGeometry = new THREE.TorusGeometry(metric.photonSphereRadius * 1.5, 0.15, 16, 128);
+            const photonRingMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffdd88,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const photonRing2 = new THREE.Mesh(photonRingGeometry, photonRingMaterial);
+            photonRing2.rotation.x = Math.PI / 2;
+            photonRing2.name = 'photonRing2';
+            scene.add(photonRing2);
+        }
+        
+        function createStarField() {
+            const starCount = 15000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+            const sizes = new Float32Array(starCount);
+            
+            for (let i = 0; i < starCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const r = 100 + Math.random() * 400;
+                
+                positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = r * Math.cos(phi);
+                
+                const temp = Math.random();
+                if (temp < 0.1) {
+                    colors[i * 3] = 0.8; colors[i * 3 + 1] = 0.9; colors[i * 3 + 2] = 1.0;
+                } else if (temp < 0.3) {
+                    colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 1.0;
+                } else if (temp < 0.7) {
+                    colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.95; colors[i * 3 + 2] = 0.8;
+                } else {
+                    colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.7; colors[i * 3 + 2] = 0.5;
+                }
+                
+                sizes[i] = 0.5 + Math.random() * 1.5;
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            const material = new THREE.ShaderMaterial({
+                uniforms: { time: { value: 0 } },
+                vertexShader: `
+                    attribute float size;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = size * (200.0 / -mvPosition.z);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    void main() {
+                        float d = length(gl_PointCoord - 0.5);
+                        float alpha = 1.0 - smoothstep(0.3, 0.5, d);
+                        float glow = exp(-d * 4.0);
+                        gl_FragColor = vec4(vColor * (alpha + glow * 0.5), alpha);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            
+            starField = new THREE.Points(geometry, material);
+            scene.add(starField);
+        }
+        
+        function createPhotonSphere() {
+            const rPhoton = metric.photonSphereRadius;
+            const geometry = new THREE.TorusGeometry(rPhoton * 1.8, 0.03, 16, 128);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffaa00,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const photonSphere = new THREE.Mesh(geometry, material);
+            photonSphere.rotation.x = Math.PI / 2;
+            photonSphere.visible = params.features.photon;
+            photonSphere.name = 'photonSphere';
+            scene.add(photonSphere);
+        }
+        
+        function createErgosphere() {
+            const geometry = new THREE.SphereGeometry(2.0, 64, 64);
+            geometry.scale(1, 0.6, 1);
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x4400ff,
+                transparent: true,
+                opacity: 0.15,
+                wireframe: true,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const ergosphere = new THREE.Mesh(geometry, material);
+            ergosphere.visible = params.features.ergo;
+            ergosphere.name = 'ergosphere';
+            scene.add(ergosphere);
+        }
+        
+        function createParticleMesh(particle) {
+            const geometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: particle.color,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            const pos = particle.position;
+            mesh.position.set(pos.x, pos.y, pos.z);
+            scene.add(mesh);
+            
+            return mesh;
+        }
+        
+        function createTrajectoryLine(particle) {
+            const geometry = new THREE.BufferGeometry();
+            const material = new THREE.LineBasicMaterial({
+                color: particle.color,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            
+            return line;
+        }
+        
+        function updateTrajectoryLine(line, trajectory) {
+            const points = trajectory.map(state => {
+                const r = state.r;
+                const theta = state.theta;
+                const phi = state.phi;
+                return new THREE.Vector3(
+                    r * Math.sin(theta) * Math.cos(phi),
+                    r * Math.cos(theta),
+                    r * Math.sin(theta) * Math.sin(phi)
+                );
+            });
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            line.geometry.dispose();
+            line.geometry = geometry;
+        }
+        
+        function setupControls() {
+            // Sliders
+            const sliders = {
+                massSlider: { param: 'mass', display: 'massDisplay', format: v => `${v}M` },
+                spinSlider: { param: 'spin', display: 'spinDisplay', format: v => v.toFixed(3) },
+                incSlider: { param: 'inclination', display: 'incDisplay', format: v => `${v}°` },
+                distSlider: { param: 'distance', display: 'distDisplay', format: v => v },
+                timeSlider: { param: 'timeScale', display: 'timeDisplay', format: v => `${v.toFixed(2)}x` }
+            };
+            
+            Object.entries(sliders).forEach(([id, config]) => {
+                const slider = document.getElementById(id);
+                if (slider) {
+                    slider.addEventListener('input', (e) => {
+                        let value = parseFloat(e.target.value);
+                        params[config.param] = value;
+                        document.getElementById(config.display).textContent = config.format(value);
+                        
+                        if (config.param === 'spin') {
+                            metric = new KerrMetric(1.0, value);
+                            quantumModule = new QuantumAnalogue(metric);
+                        }
+                        
+                        updatePhysics();
+                        updateMetricsDisplay();
+                    });
+                }
+            });
+            
+            // Toggle buttons
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.classList.toggle('active');
+                    const feature = btn.dataset.feature;
+                    params.features[feature] = btn.classList.contains('active');
+                    updateFeatures();
+                });
+            });
+            
+            // Mouse controls
+            let isDragging = false;
+            let previousMouse = { x: 0, y: 0 };
+            let cameraTheta = 0;
+            let cameraPhi = Math.PI / 2 - params.inclination * Math.PI / 180;
+            
+            document.getElementById('canvas-container').addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMouse = { x: e.clientX, y: e.clientY };
+            });
+            
+            document.addEventListener('mouseup', () => { isDragging = false; });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const dx = e.clientX - previousMouse.x;
+                const dy = e.clientY - previousMouse.y;
+                
+                cameraTheta += dx * 0.005;
+                cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, cameraPhi + dy * 0.005));
+                
+                const r = params.distance;
+                camera.position.x = r * Math.sin(cameraPhi) * Math.sin(cameraTheta);
+                camera.position.y = r * Math.cos(cameraPhi);
+                camera.position.z = r * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+                camera.lookAt(0, 0, 0);
+                
+                const inc = 90 - cameraPhi * 180 / PI;
+                params.inclination = Math.abs(inc);
+                document.getElementById('incDisplay').textContent = `${Math.round(params.inclination)}°`;
+                document.getElementById('incSlider').value = params.inclination;
+                
+                previousMouse = { x: e.clientX, y: e.clientY };
+            });
+            
+            document.getElementById('canvas-container').addEventListener('wheel', (e) => {
+                e.preventDefault();
+                params.distance = Math.max(10, Math.min(200, params.distance + e.deltaY * 0.1));
+                document.getElementById('distDisplay').textContent = Math.round(params.distance);
+                document.getElementById('distSlider').value = params.distance;
+                
+                const scale = params.distance / camera.position.length();
+                camera.position.multiplyScalar(scale);
+            });
+        }
+        
+        function updateMetricsDisplay() {
+            document.getElementById('metricRs').textContent = (2 * metric.M).toFixed(3);
+            document.getElementById('metricRh').textContent = metric.horizonRadius.toFixed(3);
+            document.getElementById('metricRisco').textContent = metric.iscoRadius.toFixed(3);
+            document.getElementById('metricRph').textContent = metric.photonSphereRadius.toFixed(3);
+            document.getElementById('metricOmega').textContent = metric.horizonAngularVelocity.toFixed(3);
+            document.getElementById('metricShadow').textContent = (3 * Math.sqrt(3) * metric.M * (1 + 0.2 * (1 - params.spin * params.spin))).toFixed(2);
+        }
+        
+        function updatePhysics() {
+            camera.position.normalize().multiplyScalar(params.distance);
+            
+            if (diskMesh) {
+                diskMesh.material.uniforms.spin.value = params.spin;
+                diskMesh.material.uniforms.inclination.value = params.inclination;
+                diskMesh.material.uniforms.innerRadius.value = metric.iscoRadius + 0.5;
+            }
+            
+            if (blackHoleMesh) {
+                blackHoleMesh.material.uniforms.spin.value = params.spin;
+            }
+            
+            document.getElementById('readoutCoord').textContent = 
+                `${params.distance.toFixed(1)}, ${params.inclination}°`;
+        }
+        
+        function updateFeatures() {
+            if (diskMesh) diskMesh.visible = params.features.disk;
+            if (starField) starField.visible = params.features.stars;
+            
+            const photonSphere = scene.getObjectByName('photonSphere');
+            if (photonSphere) photonSphere.visible = params.features.photon;
+            
+            const ergosphere = scene.getObjectByName('ergosphere');
+            if (ergosphere) ergosphere.visible = params.features.ergo;
+            
+            trajectoryLines.forEach(line => {
+                line.visible = params.features.trajectories;
+            });
+        }
+        
+        // ==================== MODE PANELS ====================
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+            
+            // Update readout
+            document.getElementById('readoutMode').textContent = mode.toUpperCase();
+            
+            // Update info panel
+            updateInfoPanel(mode);
+            
+            // Update mode panel
+            updateModePanel(mode);
+            
+            // Clear existing particles for new mode
+            if (mode !== 'orbit' && mode !== 'freefall' && mode !== 'interior') {
+                clearParticles();
+            }
+        }
+        
+        function updateModePanel(mode) {
+            const panel = document.getElementById('mode-panel');
+            
+            switch(mode) {
+                case 'observe':
+                    panel.innerHTML = '';
+                    break;
+                    
+                case 'orbit':
+                    panel.innerHTML = `
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Orbital Mechanics</h3>
+                            </div>
+                            <div class="panel-content">
+                                <div class="simulation-info">
+                                    <h4>Kerr Geodesic Orbits</h4>
+                                    <p>Simulate stable and unstable orbits around a rotating black hole. 
+                                    Particles follow timelike geodesics determined by the Kerr metric.</p>
+                                </div>
+                                
+                                <div class="control-group">
+                                    <div class="control-label">
+                                        <span>Initial Radius (rg)</span>
+                                        <span class="control-value" id="orbitRadiusDisplay">10.0</span>
+                                    </div>
+                                    <input type="range" id="orbitRadiusSlider" min="2" max="30" value="10" step="0.5">
+                                </div>
+                                
+                                <div class="control-group">
+                                    <div class="control-label">
+                                        <span>Orbital Plane Tilt (°)</span>
+                                        <span class="control-value" id="orbitTiltDisplay">0</span>
+                                    </div>
+                                    <input type="range" id="orbitTiltSlider" min="0" max="45" value="0" step="1">
+                                </div>
+                                
+                                <button class="spawn-btn" onclick="spawnOrbitParticle()">
+                                    🛰️ Spawn Orbiting Particle
+                                </button>
+                                
+                                <button class="spawn-btn" style="background: linear-gradient(135deg, #0af, #06f);" onclick="spawnOrbitSwarm()">
+                                    🌀 Spawn Orbit Swarm (10)
+                                </button>
+                                
+                                <div class="particle-count">
+                                    Active Particles: <span id="orbitParticleCount">0</span>
+                                </div>
+                                
+                                <div class="data-row">
+                                    <span>ISCO Radius:</span>
+                                    <span id="iscoValue">${metric.iscoRadius.toFixed(3)} M</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Photon Sphere:</span>
+                                    <span id="photonValue">${metric.photonSphereRadius.toFixed(3)} M</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Orbital Period (ISCO):</span>
+                                    <span id="periodValue">${(2 * PI * Math.pow(metric.iscoRadius, 1.5)).toFixed(2)} M</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Setup orbit controls
+                    document.getElementById('orbitRadiusSlider').addEventListener('input', (e) => {
+                        document.getElementById('orbitRadiusDisplay').textContent = parseFloat(e.target.value).toFixed(1);
+                    });
+                    document.getElementById('orbitTiltSlider').addEventListener('input', (e) => {
+                        document.getElementById('orbitTiltDisplay').textContent = e.target.value;
+                    });
+                    break;
+                    
+                case 'freefall':
+                    panel.innerHTML = `
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Radial Freefall Simulation</h3>
+                            </div>
+                            <div class="panel-content">
+                                <div class="simulation-info">
+                                    <h4>Horizon Crossing & Interior Physics</h4>
+                                    <p>Simulate matter falling into the black hole. Watch as particles cross the event horizon 
+                                    and experience extreme tidal forces approaching the singularity.</p>
+                                    <p style="color: #f90;">Using Kerr-Schild horizon-penetrating coordinates for smooth evolution.</p>
+                                </div>
+                                
+                                <div class="control-group">
+                                    <div class="control-label">
+                                        <span>Release Radius (rg)</span>
+                                        <span class="control-value" id="fallRadiusDisplay">20.0</span>
+                                    </div>
+                                    <input type="range" id="fallRadiusSlider" min="5" max="50" value="20" step="1">
+                                </div>
+                                
+                                <div class="control-group">
+                                    <div class="control-label">
+                                        <span>Release Angle (°)</span>
+                                        <span class="control-value" id="fallAngleDisplay">90</span>
+                                    </div>
+                                    <input type="range" id="fallAngleSlider" min="10" max="170" value="90" step="5">
+                                </div>
+                                
+                                <div class="control-group">
+                                    <div class="control-label">
+                                        <span>Initial Velocity (c)</span>
+                                        <span class="control-value" id="fallVelDisplay">0.00</span>
+                                    </div>
+                                    <input type="range" id="fallVelSlider" min="0" max="0.5" value="0" step="0.01">
+                                </div>
+                                
+                                <button class="spawn-btn" onclick="spawnFreefallParticle()">
+                                    ⬇️ Drop Particle
+                                </button>
+                                
+                                <button class="spawn-btn" style="background: linear-gradient(135deg, #f44, #a00);" onclick="spawnFreefallRain()">
+                                    🌧️ Particle Rain (20)
+                                </button>
+                                
+                                <div class="particle-count">
+                                    Active Particles: <span id="fallParticleCount">0</span>
+                                </div>
+                                
+                                <div class="warning-text" id="horizonWarning" style="display: none;">
+                                    ⚠️ Particle crossed event horizon!
+                                </div>
+                                
+                                <canvas id="penroseDiagram" class="penrose-diagram"></canvas>
+                                
+                                <div class="data-row">
+                                    <span>Proper Time to Horizon:</span>
+                                    <span id="properTimeHorizon">--</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Coordinate Time (∞):</span>
+                                    <span id="coordTimeHorizon">∞</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Tidal Stretch Factor:</span>
+                                    <span id="tidalStretch">1.00</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Redshift (z):</span>
+                                    <span id="redshiftValue">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Setup freefall controls
+                    document.getElementById('fallRadiusSlider').addEventListener('input', (e) => {
+                        document.getElementById('fallRadiusDisplay').textContent = parseFloat(e.target.value).toFixed(1);
+                    });
+                    document.getElementById('fallAngleSlider').addEventListener('input', (e) => {
+                        document.getElementById('fallAngleDisplay').textContent = e.target.value;
+                    });
+                    document.getElementById('fallVelSlider').addEventListener('input', (e) => {
+                        document.getElementById('fallVelDisplay').textContent = parseFloat(e.target.value).toFixed(2);
+                    });
+                    
+                    // Initialize Penrose diagram
+                    drawPenroseDiagram();
+                    break;
+                    
+                case 'interior':
+                    panel.innerHTML = `
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Black Hole Interior</h3>
+                            </div>
+                            <div class="panel-content">
+                                <div class="simulation-info">
+                                    <h4>Kruskal-Szekeres Coordinates</h4>
+                                    <p>Visualize the full causal structure of spacetime, including the interior region beyond the horizon.</p>
+                                    <p style="color: #a855f7;">The singularity is a moment in future time, not a place in space.</p>
+                                </div>
+                                
+                                <canvas id="kruskalDiagram" class="penrose-diagram" style="height: 250px;"></canvas>
+                                
+                                <div class="data-row">
+                                    <span>Region I (Exterior):</span>
+                                    <span style="color: #0f0;">r > 2M</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Region II (Interior):</span>
+                                    <span style="color: #f00;">r < 2M</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Singularity:</span>
+                                    <span style="color: #fff;">r = 0 (spacelike)</span>
+                                </div>
+                                
+                                <button class="spawn-btn" style="background: linear-gradient(135deg, #a855f7, #6366f1);" onclick="animateKruskal()">
+                                    🔮 Animate Worldline
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    setTimeout(drawKruskalDiagram, 100);
+                    break;
+                    
+                case 'quantum':
+                    panel.innerHTML = `
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Quantum Horizon Physics</h3>
+                            </div>
+                            <div class="panel-content">
+                                <div class="quantum-display">
+                                    <h4>🔬 Hawking Radiation Analogue</h4>
+                                    <p style="color: #aaa; font-size: 11px;">
+                                        Simulating quantum field fluctuations near the horizon using 1+1D lattice QFT.
+                                    </p>
+                                </div>
+                                
+                                <div class="data-row">
+                                    <span>Hawking Temperature:</span>
+                                    <span id="hawkingTemp">${quantumModule.hawkingTemperature.toExponential(2)} K</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Bekenstein Entropy:</span>
+                                    <span id="bekensteinEntropy">${(4 * PI * Math.pow(metric.horizonRadius, 2)).toFixed(2)} k_B</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Entanglement Entropy:</span>
+                                    <span id="entanglementS">${quantumModule.entanglementEntropy.toFixed(4)}</span>
+                                </div>
+                                
+                                <canvas id="hawkingSpectrum" class="trajectory-canvas"></canvas>
+                                
+                                <canvas id="quantumField" class="trajectory-canvas"></canvas>
+                                
+                                <button class="spawn-btn" style="background: linear-gradient(135deg, #a855f7, #ec4899);" onclick="resetQuantum()">
+                                    🔄 Reset Quantum State
+                                </button>
+                                
+                                <div class="simulation-info" style="margin-top: 15px;">
+                                    <h4>Theoretical Framework</h4>
+                                    <p style="font-size: 10px; color: #888;">
+                                        Klein-Gordon equation on curved background:<br>
+                                        <span style="color: #f90;">□φ - ξRφ = 0</span><br>
+                                        with conformal coupling ξ = 1/6
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        drawHawkingSpectrum();
+                        drawQuantumField();
+                    }, 100);
+                    break;
+            }
+        }
+        
+        function updateInfoPanel(mode) {
+            const title = document.getElementById('infoTitle');
+            const content = document.getElementById('infoContent');
+            
+            switch(mode) {
+                case 'observe':
+                    title.textContent = 'Kerr Metric';
+                    content.innerHTML = `
+                        <div class="equation-box">
+                            <span class="eq">ds² = -(1-2Mr/Σ)dt²</span> - <span class="eq">(4Mar sin²θ/Σ)dtdφ</span><br>
+                            + <span class="eq">(Σ/Δ)dr²</span> + <span class="eq">Σdθ²</span> + <span class="eq">Asin²θ/Σ dφ²</span><br><br>
+                            where: Σ = r² + a²cos²θ, Δ = r² - 2Mr + a²<br>
+                            A = (r² + a²)² - a²Δsin²θ
+                        </div>
+                    `;
+                    break;
+                    
+                case 'orbit':
+                    title.textContent = 'Geodesic Equation';
+                    content.innerHTML = `
+                        <div class="equation-box">
+                            <span class="eq">d²xᵘ/dτ² + Γᵘ_νρ (dxᵛ/dτ)(dxᵖ/dτ) = 0</span><br><br>
+                            <strong>Constants of Motion:</strong><br>
+                            Energy: <span class="eq">E = -(∂L/∂ṫ)</span><br>
+                            Angular momentum: <span class="eq">L = ∂L/∂φ̇</span><br>
+                            Carter constant: <span class="eq">Q = p_θ² + cos²θ[a²(m²-E²) + L²/sin²θ]</span>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'freefall':
+                    title.textContent = 'Horizon Crossing';
+                    content.innerHTML = `
+                        <div class="equation-box">
+                            <strong>Proper Time to Singularity:</strong><br>
+                            <span class="eq">τ = (π/2) × (r_s/c) × (r/r_s)^(3/2)</span><br><br>
+                            <strong>Tidal Acceleration:</strong><br>
+                            <span class="eq">a_tidal = (2GM/r³) × Δr</span><br><br>
+                            <strong>Kerr-Schild Coordinates:</strong><br>
+                            Regular at r = r_+ (horizon penetrating)<br>
+                            <span class="eq">ds² = -(1-2Mr/Σ)dv² + 2dvdr + Σdθ² + ...</span>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'interior':
+                    title.textContent = 'Kruskal-Szekeres';
+                    content.innerHTML = `
+                        <div class="equation-box">
+                            <strong>Coordinate Transformation:</strong><br>
+                            <span class="eq">U = -e^(-u/4M)</span> , <span class="eq">V = e^(v/4M)</span><br>
+                            where u = t - r*, v = t + r*<br><br>
+                            <strong>Tortoise Coordinate:</strong><br>
+                            <span class="eq">r* = r + 2M ln|r/2M - 1|</span><br><br>
+                            <strong>Metric:</strong><br>
+                            <span class="eq">ds² = (32M³/r)e^(-r/2M)(-dT² + dX²) + r²dΩ²</span>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'quantum':
+                    title.textContent = 'Hawking Radiation';
+                    content.innerHTML = `
+                        <div class="equation-box">
+                            <strong>Hawking Temperature:</strong><br>
+                            <span class="eq">T_H = ℏc³ / (8πGMk_B)</span><br><br>
+                            <strong>Bekenstein-Hawking Entropy:</strong><br>
+                            <span class="eq">S = k_B c³ A / (4Għ) = k_B A / (4l_P²)</span><br><br>
+                            <strong>Stefan-Boltzmann Power:</strong><br>
+                            <span class="eq">P = (ℏc⁶)/(15360πG²M²)</span><br><br>
+                            <strong>Evaporation Time:</strong><br>
+                            <span class="eq">t_evap ≈ 5120πG²M³/(ℏc⁴)</span>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+        
+        // ==================== PARTICLE SPAWNING ====================
+        function spawnOrbitParticle() {
+            const r = parseFloat(document.getElementById('orbitRadiusSlider').value);
+            const particle = createOrbitingParticle(r, metric);
+            
+            particles.push(particle);
+            particleMeshes.push(createParticleMesh(particle));
+            trajectoryLines.push(createTrajectoryLine(particle));
+            
+            updateParticleCount();
+        }
+        
+        function spawnOrbitSwarm() {
+            const baseR = parseFloat(document.getElementById('orbitRadiusSlider').value);
+            
+            for (let i = 0; i < 10; i++) {
+                const r = baseR + (Math.random() - 0.5) * 4;
+                const particle = createOrbitingParticle(Math.max(metric.iscoRadius + 0.5, r), metric);
+                particle.color = new THREE.Color().setHSL(Math.random(), 0.8, 0.6).getHex();
+                
+                particles.push(particle);
+                particleMeshes.push(createParticleMesh(particle));
+                trajectoryLines.push(createTrajectoryLine(particle));
+            }
+            
+            updateParticleCount();
+        }
+        
+        function spawnFreefallParticle() {
+            const r = parseFloat(document.getElementById('fallRadiusSlider').value);
+            const theta = parseFloat(document.getElementById('fallAngleSlider').value) * PI / 180;
+            const v = parseFloat(document.getElementById('fallVelSlider').value);
+            
+            const state = {
+                t: 0,
+                r: r,
+                theta: theta,
+                phi: Math.random() * 2 * PI,
+                v_r: -v,
+                v_theta: 0,
+                v_phi: 0,
+                v_t: 1,
+                properTime: 0
+            };
+            
+            const particle = new Particle('massive', state, metric);
+            particle.color = 0x00ff88;
+            
+            particles.push(particle);
+            particleMeshes.push(createParticleMesh(particle));
+            trajectoryLines.push(createTrajectoryLine(particle));
+            
+            updateParticleCount();
+        }
+        
+        function spawnFreefallRain() {
+            const baseR = parseFloat(document.getElementById('fallRadiusSlider').value);
+            
+            for (let i = 0; i < 20; i++) {
+                const r = baseR + Math.random() * 10;
+                const theta = PI/4 + Math.random() * PI/2;
+                const phi = Math.random() * 2 * PI;
+                
+                const state = {
+                    t: 0,
+                    r: r,
+                    theta: theta,
+                    phi: phi,
+                    v_r: -0.02 * Math.random(),
+                    v_theta: 0,
+                    v_phi: 0,
+                    v_t: 1,
+                    properTime: 0
+                };
+                
+                const particle = new Particle('massive', state, metric);
+                particle.color = new THREE.Color().setHSL(0.3 + Math.random() * 0.2, 0.9, 0.5).getHex();
+                
+                particles.push(particle);
+                particleMeshes.push(createParticleMesh(particle));
+                trajectoryLines.push(createTrajectoryLine(particle));
+            }
+            
+            updateParticleCount();
+        }
+        
+        function clearParticles() {
+            particles = [];
+            particleMeshes.forEach(mesh => scene.remove(mesh));
+            particleMeshes = [];
+            trajectoryLines.forEach(line => scene.remove(line));
+            trajectoryLines = [];
+            updateParticleCount();
+        }
+        
+        function updateParticleCount() {
+            document.getElementById('readoutParticles').textContent = particles.length;
+            
+            const orbitCount = document.getElementById('orbitParticleCount');
+            if (orbitCount) orbitCount.textContent = particles.length;
+            
+            const fallCount = document.getElementById('fallParticleCount');
+            if (fallCount) fallCount.textContent = particles.length;
+        }
+        
+        // ==================== DIAGRAM DRAWING ====================
+        function drawPenroseDiagram() {
+            const canvas = document.getElementById('penroseDiagram');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            
+            // Background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Draw Penrose diagram
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            
+            // Null infinity lines
+            ctx.beginPath();
+            ctx.moveTo(w/2, 0);
+            ctx.lineTo(w, h/2);
+            ctx.lineTo(w/2, h);
+            ctx.lineTo(0, h/2);
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Horizon
+            ctx.strokeStyle = '#f90';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(w/4, h/4);
+            ctx.lineTo(w/2, h/2);
+            ctx.lineTo(w/4, 3*h/4);
+            ctx.stroke();
+            
+            // Singularity
+            ctx.strokeStyle = '#f00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(w/4, h/4);
+            ctx.lineTo(w/4, 3*h/4);
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = '#888';
+            ctx.font = '10px monospace';
+            ctx.fillText('i⁺', w/2 - 5, 12);
+            ctx.fillText('i⁻', w/2 - 5, h - 5);
+            ctx.fillText('i⁰', w - 15, h/2 + 4);
+            ctx.fillStyle = '#f90';
+            ctx.fillText('r=2M', w/4 + 5, h/2);
+            ctx.fillStyle = '#f00';
+            ctx.fillText('r=0', 5, h/2);
+        }
+        
+        function drawKruskalDiagram() {
+            const canvas = document.getElementById('kruskalDiagram');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            // Background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Region colors
+            // Region I (exterior, right)
+            ctx.fillStyle = 'rgba(0, 100, 0, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(w, 0);
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Region II (interior, top - future)
+            ctx.fillStyle = 'rgba(100, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(w, 0);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Horizons (null lines)
+            ctx.strokeStyle = '#f90';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            ctx.lineTo(w, 0);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(w, h);
+            ctx.stroke();
+            
+            // Singularities (hyperbolas)
+            ctx.strokeStyle = '#f00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = -1; x <= 1; x += 0.05) {
+                const y = Math.sqrt(1 + x * x) * 0.3;
+                const px = cx + x * w * 0.4;
+                const py = cy - y * h * 0.8;
+                if (x === -1) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            
+            ctx.beginPath();
+            for (let x = -1; x <= 1; x += 0.05) {
+                const y = Math.sqrt(1 + x * x) * 0.3;
+                const px = cx + x * w * 0.4;
+                const py = cy + y * h * 0.8;
+                if (x === -1) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = '#0f0';
+            ctx.font = '11px monospace';
+            ctx.fillText('I (exterior)', w - 70, cy);
+            ctx.fillStyle = '#f44';
+            ctx.fillText('II (interior)', cx - 25, 20);
+            ctx.fillStyle = '#f00';
+            ctx.fillText('singularity', cx - 30, 40);
+            ctx.fillStyle = '#f90';
+            ctx.fillText('horizon', 10, cy - 10);
+        }
+        
+        function animateKruskal() {
+            const canvas = document.getElementById('kruskalDiagram');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            let t = 0;
+            const animate = () => {
+                t += 0.02;
+                if (t > 1.5) {
+                    t = 0;
+                }
+                
+                drawKruskalDiagram();
+                
+                // Draw worldline
+                ctx.strokeStyle = '#0ff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                for (let s = 0; s <= t; s += 0.01) {
+                    // Timelike worldline crossing horizon
+                    const x = cx + s * w * 0.3;
+                    const y = cy - s * s * h * 0.3;
+                    if (s === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                
+                // Current position
+                const px = cx + t * w * 0.3;
+                const py = cy - t * t * h * 0.3;
+                ctx.fillStyle = '#0ff';
+                ctx.beginPath();
+                ctx.arc(px, py, 5, 0, 2 * PI);
+                ctx.fill();
+                
+                if (t < 1.5) {
+                    requestAnimationFrame(animate);
+                }
+            };
+            
+            animate();
+        }
+        
+        function drawHawkingSpectrum() {
+            const canvas = document.getElementById('hawkingSpectrum');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Draw Planck spectrum
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const T = 1; // Normalized temperature
+            for (let i = 0; i < w; i++) {
+                const nu = (i / w) * 5;
+                const B = (nu * nu * nu) / (Math.exp(nu / T) - 1 + 0.001);
+                const y = h - 20 - B * (h - 40) * 0.3;
+                if (i === 0) ctx.moveTo(i, y);
+                else ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+            
+            // Simulated spectrum
+            ctx.strokeStyle = '#ec4899';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            for (let i = 0; i < quantumModule.hawkingSpectrum.length; i++) {
+                const x = (i / quantumModule.hawkingSpectrum.length) * w;
+                const y = h - 20 - quantumModule.hawkingSpectrum[i] * (h - 40) * 50;
+                if (i === 0) ctx.moveTo(x, Math.min(y, h - 20));
+                else ctx.lineTo(x, Math.min(y, h - 20));
+            }
+            ctx.stroke();
+            
+            ctx.fillStyle = '#888';
+            ctx.font = '10px monospace';
+            ctx.fillText('Hawking Spectrum', 10, 15);
+            ctx.fillText('ω/T_H →', w - 50, h - 5);
+        }
+        
+        function drawQuantumField() {
+            const canvas = document.getElementById('quantumField');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            const size = quantumModule.latticeSize;
+            const cellW = w / size;
+            const cellH = h / size;
+            
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const val = quantumModule.field[i * size + j];
+                    const intensity = Math.min(1, Math.abs(val) * 100);
+                    
+                    if (val > 0) {
+                        ctx.fillStyle = `rgba(168, 85, 247, ${intensity})`;
+                    } else {
+                        ctx.fillStyle = `rgba(236, 72, 153, ${intensity})`;
+                    }
+                    
+                    ctx.fillRect(j * cellW, i * cellH, cellW + 1, cellH + 1);
+                }
+            }
+            
+            // Horizon marker
+            const horizonY = size * 0.3 * cellH;
+            ctx.strokeStyle = '#f90';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.lineTo(w, horizonY);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#f90';
+            ctx.font = '10px monospace';
+            ctx.fillText('horizon', 5, horizonY - 5);
+        }
+        
+        function resetQuantum() {
+            quantumModule.reset();
+        }
+        
+        // ==================== ANIMATION LOOP ====================
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isPlaying) {
+                const dt = 0.016 * params.timeScale;
+                properTime += dt;
+                coordinateTime += dt;
+                
+                // Update black hole shader
+                if (blackHoleMesh) {
+                    blackHoleMesh.material.uniforms.time.value = properTime;
+                }
+                
+                // Update disk
+                if (diskMesh) {
+                    diskMesh.material.uniforms.time.value = properTime;
+                    diskMesh.rotation.z += 0.005 * params.timeScale;
+                }
+                
+                // Update lensed rings (Interstellar style)
+                if (upperRing && upperRing.material.uniforms) {
+                    upperRing.material.uniforms.time.value = properTime;
+                }
+                if (lowerRing && lowerRing.material.uniforms) {
+                    lowerRing.material.uniforms.time.value = properTime;
+                }
+                if (innerGlowRing && innerGlowRing.material.uniforms) {
+                    innerGlowRing.material.uniforms.time.value = properTime;
+                }
+                
+                // Update particles
+                particles.forEach((particle, i) => {
+                    if (particle.alive) {
+                        particle.update(dt * 0.5);
+                        
+                        const pos = particle.position;
+                        if (particleMeshes[i]) {
+                            particleMeshes[i].position.set(pos.x, pos.y, pos.z);
+                            
+                            // Scale based on tidal forces
+                            const stretch = 1 + Math.abs(particle.tidalStretch) * 0.1;
+                            particleMeshes[i].scale.set(1/stretch, stretch, 1/stretch);
+                        }
+                        
+                        // Update trajectory
+                        if (trajectoryLines[i] && params.features.trajectories) {
+                            updateTrajectoryLine(trajectoryLines[i], particle.trajectory);
+                        }
+                        
+                        // Update freefall UI
+                        if (currentMode === 'freefall' && particle.crossedHorizon) {
+                            const warning = document.getElementById('horizonWarning');
+                            if (warning) warning.style.display = 'block';
+                        }
+                    } else {
+                        if (particleMeshes[i]) {
+                            particleMeshes[i].visible = false;
+                        }
+                    }
+                });
+                
+                // Remove dead particles
+                const aliveParticles = [];
+                const aliveMeshes = [];
+                const aliveLines = [];
+                
+                for (let i = 0; i < particles.length; i++) {
+                    if (particles[i].alive || particles[i].trajectory.length > 10) {
+                        aliveParticles.push(particles[i]);
+                        aliveMeshes.push(particleMeshes[i]);
+                        aliveLines.push(trajectoryLines[i]);
+                    } else {
+                        scene.remove(particleMeshes[i]);
+                        scene.remove(trajectoryLines[i]);
+                    }
+                }
+                
+                particles = aliveParticles;
+                particleMeshes = aliveMeshes;
+                trajectoryLines = aliveLines;
+                
+                // Update quantum module
+                if (currentMode === 'quantum') {
+                    quantumModule.evolve(dt);
+                    
+                    if (frameCount % 5 === 0) {
+                        drawHawkingSpectrum();
+                        drawQuantumField();
+                        
+                        const entS = document.getElementById('entanglementS');
+                        if (entS) entS.textContent = quantumModule.entanglementEntropy.toFixed(4);
+                    }
+                }
+                
+                // Update freefall data
+                if (currentMode === 'freefall' && particles.length > 0) {
+                    const p = particles[particles.length - 1];
+                    
+                    const tidalEl = document.getElementById('tidalStretch');
+                    if (tidalEl) tidalEl.textContent = (1 + Math.abs(p.tidalStretch)).toFixed(4);
+                    
+                    const redshiftEl = document.getElementById('redshiftValue');
+                    if (redshiftEl) {
+                        const z = 1 / p.timeDilation - 1;
+                        redshiftEl.textContent = z.toFixed(4);
+                    }
+                }
+                
+                // Update readouts
+                document.getElementById('readoutTime').textContent = properTime.toFixed(3);
+                updateParticleCount();
+            }
+            
+            // FPS counter
+            frameCount++;
+            const now = performance.now();
+            if (now - lastFpsTime >= 1000) {
+                document.getElementById('readoutFps').textContent = frameCount;
+                frameCount = 0;
+                lastFpsTime = now;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // ==================== UI FUNCTIONS ====================
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const icon = document.getElementById('playIcon');
+            icon.innerHTML = isPlaying ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+        }
+        
+        function resetSimulation() {
+            properTime = 0;
+            coordinateTime = 0;
+            clearParticles();
+            camera.position.set(0, 10, 50);
+            camera.lookAt(0, 0, 0);
+            
+            document.getElementById('distSlider').value = 50;
+            document.getElementById('incSlider').value = 85;
+            document.getElementById('distDisplay').textContent = '50';
+            document.getElementById('incDisplay').textContent = '85°';
+            
+            params.distance = 50;
+            params.inclination = 85;
+            
+            updatePhysics();
+            
+            const warning = document.getElementById('horizonWarning');
+            if (warning) warning.style.display = 'none';
+        }
+        
+        function captureFrame() {
+            renderer.render(scene, camera);
+            const link = document.createElement('a');
+            link.download = `gargantua_${currentMode}_${Date.now()}.png`;
+            link.href = renderer.domElement.toDataURL('image/png');
+            link.click();
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

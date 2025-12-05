@@ -1,0 +1,76 @@
+# Conda environment for BlackHole-Sim
+# ====================================
+# Create with: conda env create -f environment.yml
+# Activate with: conda activate bhsim
+
+name: bhsim
+channels:
+  - conda-forge
+  - nvidia
+  - defaults
+
+dependencies:
+  # Python
+  - python>=3.9
+  
+  # Core scientific
+  - numpy>=1.21
+  - scipy>=1.7
+  - numba>=0.55
+  
+  # Visualization
+  - matplotlib>=3.5
+  - plotly>=5.0
+  - bokeh>=2.4
+  
+  # Data I/O
+  - h5py>=3.0
+  - astropy>=5.0
+  - pandas>=1.4
+  
+  # Jupyter
+  - jupyter>=1.0
+  - jupyterlab>=3.0
+  - ipywidgets>=7.6
+  - ipympl>=0.8
+  
+  # Image/Video
+  - pillow>=9.0
+  - imageio>=2.9
+  - ffmpeg>=4.0
+  
+  # Build tools
+  - cmake>=3.20
+  - ninja>=1.10
+  - pybind11>=2.9
+  - compilers
+  
+  # CUDA (optional - comment out if no GPU)
+  - cudatoolkit>=11.0
+  
+  # MPI (optional - for HPC)
+  - openmpi>=4.1
+  - mpi4py>=3.1
+  
+  # HDF5 with parallel support
+  - hdf5>=1.12
+  - h5py>=3.0
+  
+  # Testing
+  - pytest>=7.0
+  - pytest-cov>=3.0
+  
+  # Documentation
+  - sphinx>=4.0
+  - sphinx_rtd_theme>=1.0
+  - nbsphinx>=0.8
+  
+  # Code quality
+  - black>=22.0
+  - flake8>=4.0
+  - mypy>=0.950
+  
+  # Additional pip packages
+  - pip:
+    - imageio-ffmpeg>=0.4.0
+    - astroquery>=0.4.0
