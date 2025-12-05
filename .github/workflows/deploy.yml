@@ -1,5 +1,5 @@
 # GitHub Actions workflow for deploying Gargantua to GitHub Pages
-# Repository: https://github.com/Karan2505/Blackhole-sim
+# Repository: https://github.com/Karan2505/Blackhole-Sim
 name: Deploy to GitHub Pages
 on:
   # Runs on pushes targeting the default branch
