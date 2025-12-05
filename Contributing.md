@@ -28,8 +28,8 @@ This project and everyone participating in it is governed by our commitment to p
 
 ```bash
 # Fork and clone the repository
-git clone https://github.com/karan2505/blackhole-sim.git
-cd blackhole-sim
+git clone https://github.com/karan2505/Blackhole-Sim.git
+cd Blackhole-Sim
 
 # Start a local server
 python -m http.server 8000
@@ -72,7 +72,7 @@ Feature requests are welcome! Please provide:
 ### Project Structure
 
 ```
-blackhole-sim/
+Blackhole-Sim/
 ├── index.html          # Main application (single-page)
 ├── README.md           # Project documentation
 ├── LICENSE             # MIT License
