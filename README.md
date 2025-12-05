@@ -11,7 +11,7 @@
 
 > **Production-grade, Interstellar-quality black hole simulation** featuring general relativistic ray tracing, GRMHD fluid dynamics, polarized radiative transfer, and GPU-accelerated rendering.
 
-![Gargantua Black Hole](docs/img/gargantua_hero.jpg)
+![Gargantua Black Hole](docs/img/blackhole-sim_hero.jpg)
 
 ## 🚀 Live Demo
 
