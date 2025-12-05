@@ -1,4 +1,4 @@
-# 🌌 Gargantua - Interstellar Black Hole Simulator
+# 🌌 Gargantua - Black Hole Simulator
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/Karan2505/gargantua)
 [![Tests](https://img.shields.io/badge/tests-42%20passing-brightgreen?style=flat-square)](https://github.com/Karan2505/gargantua)
