@@ -15,7 +15,7 @@
 
 ## 🚀 Live Demo
 
-**[🌌 Launch Interactive Simulation →](https://karan2505.github.io/gargantua/)**
+**[🌌 Launch Interactive Simulation →](https://karan2505.github.io/Blackhole-Sim/)**
 
 ## ✨ Features
 
@@ -54,7 +54,7 @@
 
 ## 🚀 Live Demo
 
-**[🌌 Launch Interactive Simulation →](https://karan2505.github.io/gargantua/)**
+**[🌌 Launch Interactive Simulation →](https://karan2505.github.io/Blackhole-Sim/)**
 
 Experience an Interstellar-quality black hole visualization directly in your browser!
 
