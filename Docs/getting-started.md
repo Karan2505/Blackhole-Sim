@@ -6,7 +6,7 @@ Welcome to BlackHole-Sim! This guide will help you get up and running quickly.
 
 The easiest way to use BlackHole-Sim is through our live demo:
 
-**[Launch Live Demo →](https://karan2505.github.io/blackhole-sim/)**
+**[Launch Live Demo →](https://karan2505.github.io/Blackhole-Sim/)**
 
 ## 💻 Local Installation
 
@@ -14,8 +14,8 @@ The easiest way to use BlackHole-Sim is through our live demo:
 
 1. Download or clone the repository:
    ```bash
-   git clone https://github.com/karan2505/blackhole-sim.git
-   cd blackhole-sim
+   git clone https://github.com/karan2505/Blackhole-Sim.git
+   cd Blackhole-Sim
    ```
 
 2. Open `index.html` directly in your browser, or use a local server:
@@ -30,7 +30,7 @@ The easiest way to use BlackHole-Sim is through our live demo:
 
 ```bash
 # Pull and run the container
-docker run -p 8080:80 ghcr.io/karan2505/blackhole-sim:latest
+docker run -p 8080:80 ghcr.io/karan2505/Blackhole-Sim:latest
 
 # Visit http://localhost:8080
 ```
@@ -143,4 +143,4 @@ Click the download icon to export simulation data including:
 
 ---
 
-Questions? [Open an issue](https://github.com/karan2505/blackhole-sim/issues) on GitHub!
+Questions? [Open an issue](https://github.com/karan2505/Blackhole-Sim/issues) on GitHub!
